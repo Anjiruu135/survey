@@ -189,7 +189,9 @@ function Dashboard() {
         display: true,
         formatter: (value, context) => {
           const label = context.chart.data.labels[context.dataIndex];
-          return `${label}: ${value}`;
+          const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(2);
+          return `${label}: ${value} (${percentage}%)`;
         },
       },
       legend: {
@@ -202,37 +204,127 @@ function Dashboard() {
       },
     },
   };
+  
 
-  const barOptions = {
-    scales: {
-      y: {
-        ticks: {
-          font: {
-            size: 14,
-            weight: "bold",
-          },
-        },
-      },
-      x: {
-        ticks: {
-          font: {
-            size: 14,
-            weight: "bold",
-          },
+const getTotalVotesByMunicipality = (barData) => {
+  const totalVotes = {};
+  const { labels, datasets } = barData;
+
+  labels.forEach((label) => {
+    totalVotes[label] = 0;
+  });
+
+  datasets.forEach((dataset) => {
+    dataset.data.forEach((value, index) => {
+      totalVotes[labels[index]] += value;
+    });
+  });
+
+  return totalVotes;
+};
+
+const totalVotesGovernors = getTotalVotesByMunicipality(barDataGovernors);
+const totalVotesCongressman = getTotalVotesByMunicipality(barDataCongressman);
+
+const barOptionsGov = {
+  scales: {
+    y: {
+      ticks: {
+        font: {
+          size: 14,
+          weight: "bold",
         },
       },
     },
-    plugins: {
-      legend: {
-        labels: {
-          font: {
-            size: 14,
-            weight: "bold",
-          },
+    x: {
+      ticks: {
+        font: {
+          size: 14,
+          weight: "bold",
         },
       },
     },
-  };
+  },
+  plugins: {
+    legend: {
+      labels: {
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+      },
+    },
+    datalabels: {
+      color: "#000",
+      anchor: "end",
+      align: "end",
+      formatter: (value, context) => {
+        const municipality = context.chart.data.labels[context.dataIndex];
+        const total = context.chart.data.datasets.reduce((sum, dataset) => {
+          return sum + dataset.data[context.dataIndex];
+        }, 0);
+
+        const percentage = ((value / totalVotesGovernors[municipality]) * 100).toFixed(2);
+        return `${percentage}%`;
+      },
+      font: {
+        size: 10,
+        weight: "bold",
+      },
+    },
+  },
+};
+
+const barOptionsCong = {
+  scales: {
+    y: {
+      ticks: {
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+      },
+    },
+    x: {
+      ticks: {
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+      },
+    },
+  },
+  plugins: {
+    legend: {
+      labels: {
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+      },
+    },
+    datalabels: {
+      color: "#000",
+      anchor: "end",
+      align: "end",
+      formatter: (value, context) => {
+        const municipality = context.chart.data.labels[context.dataIndex];
+        const total = context.chart.data.datasets.reduce((sum, dataset) => {
+          return sum + dataset.data[context.dataIndex];
+        }, 0);
+
+        const percentage = ((value / totalVotesCongressman[municipality]) * 100).toFixed(2);
+        return `${percentage}%`;
+      },
+      font: {
+        size: 10,
+        weight: "bold",
+      },
+    },
+  },
+};
+
+  
 
   return (
     <div className="container">
@@ -258,7 +350,7 @@ function Dashboard() {
         <div className="row justify-content-center mt-4">
           <h3>Governors</h3>
           <div className="col-md-8">
-            <Bar data={barDataGovernors} options={barOptions} />
+            <Bar data={barDataGovernors} options={barOptionsGov} />
           </div>
         </div>
       )}
@@ -267,7 +359,7 @@ function Dashboard() {
         <div className="row justify-content-center mt-4">
           <h3>Congressman</h3>
           <div className="col-md-8">
-            <Bar data={barDataCongressman} options={barOptions} />
+            <Bar data={barDataCongressman} options={barOptionsCong} />
           </div>
         </div>
       )}
